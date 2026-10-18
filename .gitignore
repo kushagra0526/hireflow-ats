@@ -1,0 +1,7 @@
+node_modules/
+client/dist/
+.env
+.claude/
+CLAUDE.md
+brag-output/work/
+*.log
