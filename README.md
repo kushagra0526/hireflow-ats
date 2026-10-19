@@ -6,16 +6,18 @@ HireFlow is a small MERN app for tracking job candidates. You can add candidates
 - **Demo video:** [brag-output/brag.mp4](brag-output/brag.mp4) (28 s)
 - **Demo login:** `admin@hireflow.dev` / `admin123` (already filled in on the login page)
 
-![HireFlow pipeline](brag-output/brag.jpg)
+![HireFlow dashboard: a hiring report with a summary headline, stat strip, funnel and latest moves](docs/dashboard.png)
+
+![HireFlow pipeline board with six stage lanes](docs/pipeline.png)
 
 ## Features
 
 | Area | What it does |
 |---|---|
-| **Candidates** | Add, view, edit and delete candidates: name, email, phone, position, experience, skills, source, rating (1–5 stars), resume link and notes. Emails must be unique. |
-| **Hiring stages** | Six stages: Applied → Screening → Interview → Offer → Hired, plus Rejected. Drag a card between columns on the Pipeline board, or change the stage in the candidate form. Each change is saved to the candidate's stage history, which the form shows as a timeline. |
-| **Search** | One search box matches name, email, position and skills (case-insensitive, partial match). Filter by stage and position, and sort by newest, oldest, name or rating. The board also has a quick filter. |
-| **Dashboard** | Total candidates, new this week, active in pipeline, hired and hire rate, and average days to hire. Also shows the current pipeline split, a hiring funnel (how many candidates reached each stage), candidates by source and position, and recent stage activity. |
+| **Candidates** | Add, view, edit and delete candidates: name, email, phone, role, experience, skills, source, rating (1–5), résumé link and notes. Emails must be unique. Each candidate opens in a side panel with contact links and their stage history. |
+| **Hiring stages** | Six stages: Applied → Screening → Interview → Offer → Hired, plus Rejected. Drag a card between lanes on the Pipeline board, focus a card and press Shift + ← / →, or pick a stage in the candidate panel. Every move is logged to the candidate's history. Cards that have waited 7+ days in an open stage are flagged. |
+| **Search** | One search box matches name, email, role and skills (case-insensitive, partial). Matches are highlighted. Filter by stage and role, sort by newest, oldest, name or rating. Press `/` to jump to search. The board has its own quick filter. |
+| **Dashboard** | A hiring report: a one-line summary, then candidates, in process, hired, rejected and average days to hire. Below that: a funnel with stage-to-stage conversion, where everyone is right now, a per-role table (in process / hired / total), the latest stage moves and candidate sources. |
 | **Login** | One admin account set by environment variables, using JWT bearer tokens. Every API route except login needs a token. |
 
 The app seeds 28 demo candidates on first start (only when the database is empty), so the dashboard has data right away.
@@ -24,7 +26,7 @@ The app seeds 28 demo candidates on first start (only when the database is empty
 
 - **MongoDB** with Mongoose: one `Candidate` collection, with the stage history stored inside each document
 - **Express 5**: REST API, plus serving the built React app in production
-- **React 19** with Vite: no UI library, plain CSS, native HTML5 drag-and-drop and the native `<dialog>` element
+- **React 19** with Vite: no UI library. Plain CSS with an editorial look (Newsreader, IBM Plex Sans and Plex Mono). Native HTML5 drag-and-drop and the native `<dialog>` element
 - **Node 22**: tests use the built-in `node:test` runner with `mongodb-memory-server`
 
 ## Run it locally

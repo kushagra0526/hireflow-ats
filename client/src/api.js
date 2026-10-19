@@ -23,6 +23,9 @@ export async function api(path, { method = 'GET', body } = {}) {
 export const daysSince = (date) => Math.floor((Date.now() - new Date(date)) / 86_400_000);
 export const ago = (date) => {
   const d = daysSince(date);
-  return d === 0 ? 'today' : d === 1 ? 'yesterday' : `${d}d ago`;
+  return d === 0 ? 'Today' : d === 1 ? 'Yesterday' : `${d} days ago`;
 };
+export const shortDate = (date) => new Date(date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+export const stamp = (date) => new Date(date).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+export const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
 export const initials = (name) => name.split(/\s+/).map((w) => w[0]).slice(0, 2).join('').toUpperCase();

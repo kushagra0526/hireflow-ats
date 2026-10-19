@@ -1,16 +1,13 @@
 import { useEffect, useState } from 'react';
-import { api, ago } from './api.js';
-import { Avatar, Badge } from './ui.jsx';
+import { api, ago, plural } from './api.js';
+import { PageHead, StageMark } from './ui.jsx';
 
-const Bar = ({ label, value, max, note, className = '' }) => (
-  <div className={`bar-row ${className}`}>
-    <span>{label}</span>
-    <div className="track"><div className="fill" style={{ width: `${max ? (value / max) * 100 : 0}%` }} /></div>
-    <span className="num">{value}{note && <span className="muted"> · {note}</span>}</span>
-  </div>
-);
-
-const sorted = (obj) => Object.entries(obj).sort((a, b) => b[1] - a[1]);
+// the report's headline reads the numbers back as a sentence
+function headline(s) {
+  if (!s.total) return 'No candidates yet. Add the first one to start your pipeline.';
+  const hires = s.hired ? `${s.hired} hired, ${s.avgDaysToHire} days on average.` : 'No hires yet.';
+  return `${plural(s.total, 'candidate')}, ${s.active} still in process. ${hires}`;
+}
 
 export default function Dashboard({ version, onOpen }) {
   const [s, setS] = useState(null);
@@ -21,83 +18,98 @@ export default function Dashboard({ version, onOpen }) {
   }, [version]);
 
   if (error) return <p className="error" role="alert">{error}</p>;
-  if (!s) return <p className="muted">Loading…</p>;
+  if (!s) return <p className="loading">Loading the report…</p>;
 
-  const tiles = [
-    ['Total candidates', s.total, `${s.newThisWeek} new this week`],
-    ['In pipeline', s.active, 'not yet hired or rejected'],
-    ['Hired', s.hired, `${s.hireRate}% of all applicants`],
-    ['Avg. time to hire', s.avgDaysToHire == null ? '—' : `${s.avgDaysToHire}d`, 'from application to hire'],
-  ];
-  const sources = sorted(s.bySource);
-  const positions = sorted(s.byPosition);
+  const today = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
+  const funnel = Object.entries(s.funnel);
+  const roles = Object.entries(s.byPosition).sort((a, b) => b[1].total - a[1].total || a[0].localeCompare(b[0]));
+  const sources = Object.entries(s.bySource).sort((a, b) => b[1] - a[1]);
 
   return (
     <>
-      <div className="tiles">
-        {tiles.map(([label, value, sub]) => (
-          <div className="card tile" key={label}>
-            <div className="tile-label">{label}</div>
-            <div className="tile-value">{value}</div>
-            <div className="muted small">{sub}</div>
-          </div>
-        ))}
-      </div>
+      <PageHead kicker={`${today} · Hiring report`} title={headline(s)} />
 
-      <section className="card panel">
-        <h2>Pipeline right now</h2>
-        <div className="stack" role="img" aria-label={Object.entries(s.byStage).map(([k, v]) => `${k} ${v}`).join(', ')}>
-          {Object.entries(s.byStage).map(([stage, n]) => n > 0 && <span key={stage} className={`stage-${stage}`} style={{ flex: n }} title={`${stage}: ${n}`} />)}
+      <dl className="stat-strip">
+        <div><dt>Candidates</dt><dd><strong>{s.total}</strong><span>{s.newThisWeek} new this week</span></dd></div>
+        <div><dt>In process</dt><dd><strong>{s.active}</strong><span>not hired or rejected</span></dd></div>
+        <div><dt>Hired</dt><dd><strong>{s.hired}</strong><span>{s.hireRate}% of all applicants</span></dd></div>
+        <div><dt>Rejected</dt><dd><strong>{s.rejected}</strong><span>{s.total ? Math.round((s.rejected / s.total) * 100) : 0}% of all applicants</span></dd></div>
+        <div><dt>Time to hire</dt><dd><strong>{s.avgDaysToHire ?? '—'}{s.avgDaysToHire != null && <small>days</small>}</strong><span>application to hire, average</span></dd></div>
+      </dl>
+
+      <div className="report">
+        <div className="report-main">
+          <section>
+            <h2 className="section-title">Funnel</h2>
+            <p className="section-note">How many people ever reached each stage. The right column is the share of the stage before who moved on.</p>
+            <ol className="funnel">
+              {funnel.map(([stage, n], i) => {
+                const prev = i ? funnel[i - 1][1] : 0;
+                return (
+                  <li key={stage} className={`stage-${stage}`}>
+                    <span>{stage}</span>
+                    <span className="bar" aria-hidden="true"><i style={{ width: `${s.funnel.Applied ? (n / s.funnel.Applied) * 100 : 0}%` }} /></span>
+                    <span className="num">{n}</span>
+                    <span className="num rate">{i === 0 ? '' : prev ? `${Math.round((n / prev) * 100)}%` : '—'}</span>
+                  </li>
+                );
+              })}
+            </ol>
+          </section>
+
+          <section>
+            <h2 className="section-title">Where everyone is now</h2>
+            <div className="split-bar" role="img" aria-label={Object.entries(s.byStage).map(([k, v]) => `${k}: ${v}`).join(', ')}>
+              {Object.entries(s.byStage).map(([stage, n]) => n > 0 && <span key={stage} className={`stage-${stage}`} style={{ flexGrow: n }} title={`${stage}: ${n}`} />)}
+            </div>
+            <ul className="split-legend">
+              {Object.entries(s.byStage).map(([stage, n]) => <li key={stage}><StageMark stage={stage} /><span className="num">{n}</span></li>)}
+            </ul>
+          </section>
+
+          <section>
+            <h2 className="section-title">By role</h2>
+            <table className="mini-table">
+              <thead><tr><th scope="col">Role</th><th scope="col">In process</th><th scope="col">Hired</th><th scope="col">Total</th></tr></thead>
+              <tbody>
+                {roles.map(([role, r]) => (
+                  <tr key={role}><th scope="row">{role}</th><td>{r.active}</td><td>{r.hired || '—'}</td><td>{r.total}</td></tr>
+                ))}
+              </tbody>
+            </table>
+          </section>
         </div>
-        <div className="legend">
-          {Object.entries(s.byStage).map(([stage, n]) => (
-            <span key={stage} className={`stage-${stage}`}><i className="dot" /> {stage} <b>{n}</b></span>
-          ))}
-        </div>
-      </section>
 
-      <div className="grid2">
-        <section className="card panel">
-          <h2>Hiring funnel</h2>
-          <div className="bars">
-            {Object.entries(s.funnel).map(([stage, n]) => (
-              <Bar key={stage} className={`stage-${stage}`} label={stage} value={n} max={s.funnel.Applied} note={`${s.funnel.Applied ? Math.round((n / s.funnel.Applied) * 100) : 0}%`} />
-            ))}
-          </div>
-          <p className="muted small foot">Candidates who ever reached each stage, as a share of all applicants.</p>
-        </section>
+        <aside className="report-side">
+          <section>
+            <h2 className="section-title">Latest moves</h2>
+            <ol className="log">
+              {s.recent.map((r) => (
+                <li key={`${r.id}-${r.stage}-${r.at}`}>
+                  <button onClick={() => onOpen(r.id)}>
+                    <time dateTime={r.at}>{ago(r.at)}</time>
+                    <span>
+                      <strong>{r.name}</strong> {r.stage === 'Applied' ? <>applied for {r.position}</> : <>moved to <StageMark stage={r.stage} /></>}
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ol>
+          </section>
 
-        <section className="card panel">
-          <h2>Recent activity</h2>
-          <ul className="activity">
-            {s.recent.map((r) => (
-              <li key={`${r.id}-${r.stage}-${r.at}`}>
-                <button onClick={() => onOpen(r.id)}>
-                  <Avatar name={r.name} />
-                  <span className="grow">
-                    <strong>{r.name}</strong> {r.stage === 'Applied' ? 'applied' : 'moved to'} {r.stage !== 'Applied' && <Badge stage={r.stage} />}
-                    <span className="muted small">{r.position}</span>
-                  </span>
-                  <span className="muted small">{ago(r.at)}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </section>
-
-        <section className="card panel">
-          <h2>Candidates by source</h2>
-          <div className="bars">
-            {sources.map(([src, n]) => <Bar key={src} label={src} value={n} max={sources[0][1]} />)}
-          </div>
-        </section>
-
-        <section className="card panel">
-          <h2>Candidates by position</h2>
-          <div className="bars">
-            {positions.map(([pos, n]) => <Bar key={pos} label={pos} value={n} max={positions[0][1]} />)}
-          </div>
-        </section>
+          <section>
+            <h2 className="section-title">Sources</h2>
+            <ul className="sources">
+              {sources.map(([src, n]) => (
+                <li key={src}>
+                  <span>{src}</span>
+                  <span className="bar" aria-hidden="true"><i style={{ width: `${(n / sources[0][1]) * 100}%` }} /></span>
+                  <span className="num">{n}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        </aside>
       </div>
     </>
   );

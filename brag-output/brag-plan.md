@@ -6,6 +6,7 @@
 **Visual hook:** the seed data itself: 28 candidates, 6 stages, 1 board.
 **Real UI shown:** login, dashboard, pipeline drag (Priya Nair from Offer to Hired), search for "react". Every screen is the app's real markup and CSS captured from the running app, then animated.
 **Tone:** default (clean, punchy), with soft dips between scenes.
+**Visual identity:** the app's own "hiring desk" look: warm paper, ink, hairline rules, Newsreader serif captions with numbered small-caps labels, a yellow highlighter swipe under the hook numbers, ink outro. No gradients or glows.
 **Share line:** HireFlow is a mini ATS: drag a candidate to Hired and the funnel updates.
 
 | # | Time | Scene | On screen |

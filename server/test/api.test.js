@@ -108,6 +108,10 @@ test('stats add up', async () => {
   assert.equal(s.active, total - s.hired - s.rejected);
   assert.equal(s.hireRate, Math.round((s.hired / total) * 100));
   assert.ok(s.avgDaysToHire > 0);
+  const roles = Object.values(s.byPosition);
+  assert.equal(roles.reduce((a, r) => a + r.total, 0), total);
+  assert.equal(roles.reduce((a, r) => a + r.hired, 0), s.hired);
+  assert.equal(roles.reduce((a, r) => a + r.active, 0), s.active);
   assert.equal(s.recent.length, 8);
   assert.ok(new Date(s.recent[0].at) >= new Date(s.recent[7].at));
 });

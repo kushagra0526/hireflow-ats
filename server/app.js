@@ -100,7 +100,13 @@ app.get('/api/stats', async (req, res) => {
     // funnel: how many candidates ever reached each stage
     funnel: Object.fromEntries(STAGES.slice(0, 5).map((s) => [s, all.filter((c) => c.history.some((h) => h.stage === s)).length])),
     bySource: tally(all, 'source'),
-    byPosition: tally(all, 'position'),
+    byPosition: all.reduce((m, c) => {
+      const p = (m[c.position] ??= { total: 0, active: 0, hired: 0 });
+      p.total++;
+      if (c.stage === 'Hired') p.hired++;
+      else if (c.stage !== 'Rejected') p.active++;
+      return m;
+    }, {}),
     recent: all
       .flatMap((c) => c.history.map((h) => ({ id: c._id, name: c.name, position: c.position, stage: h.stage, at: h.at })))
       .sort((a, b) => new Date(b.at) - new Date(a.at))
